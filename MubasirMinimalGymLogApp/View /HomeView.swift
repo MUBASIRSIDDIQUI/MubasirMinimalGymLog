@@ -8,6 +8,14 @@
 // MubasirMinimalGymLogApp/Views/HomeView.swift
 import SwiftUI
 
+// Centralized strings for HomeView and its subviews
+struct HomeViewStrings {
+    static let navigationTitle = "Gym Log"
+    static let currentWorkoutTitle = "Current Workout:"
+    static let resumeWorkoutButton = "Resume Workout"
+    static let chooseWorkoutTitle = "Choose a Workout:"
+}
+
 struct HomeView: View {
     @EnvironmentObject var store: WorkoutStore
     @Binding var selectedTab: Int
@@ -16,8 +24,14 @@ struct HomeView: View {
 
     private func getCurrentDayIndex() -> Int {
         let calendar = Calendar.current
-        let weekday = calendar.component(.weekday, from: Date()) // 1=Sun, 2=Mon, ..., 7=Sat
-        return (weekday == 1) ? 6 : (weekday - 2) // Adjust so Monday is 0, Sunday is 6
+        // weekday is 1 for Sunday, 2 for Monday, ..., 7 for Saturday
+        let weekday = calendar.component(.weekday, from: Date())
+
+        if weekday == 1 { // Sunday
+            return 6
+        } else { // Monday to Saturday
+            return weekday - 2 // Monday (2) becomes 0, Saturday (7) becomes 5
+        }
     }
 
     var body: some View {
@@ -49,8 +63,8 @@ struct HomeView: View {
             }
             .padding()
             .background(Color.black.ignoresSafeArea())
-            .navigationTitle("Gym Log") // Simplified title
-            .navigationBarTitleDisplayMode(.large)
+            .navigationTitle(HomeViewStrings.navigationTitle) // Simplified title
+            .navigationBarTitleDisplayMode(.inline)
         }
         .navigationViewStyle(.stack)
     }
@@ -63,19 +77,19 @@ struct ActiveWorkoutCardView: View {
 
     var body: some View {
         VStack(alignment: .leading) {
-            Text("Current Workout:")
+            Text(HomeViewStrings.currentWorkoutTitle)
                 .font(.headline)
                 .foregroundColor(.gray)
             Text(sessionName)
                 .font(.title2).bold()
                 .foregroundColor(.orange)
             Button(action: resumeAction) {
-                Label("Resume Workout", systemImage: "play.circle.fill")
-                    .foregroundColor(.black)
+                Label(HomeViewStrings.resumeWorkoutButton, systemImage: "play.circle.fill")
+                    .foregroundColor(.white)
                     .fontWeight(.semibold)
                     .padding()
                     .frame(maxWidth: .infinity)
-                    .background(Color.green)
+                    .background(Color.orange)
                     .cornerRadius(12)
             }
         }
@@ -92,7 +106,7 @@ struct WorkoutTemplatesListView: View {
 
     var body: some View {
         VStack(alignment: .leading) {
-            Text("Choose a Workout:")
+            Text(HomeViewStrings.chooseWorkoutTitle)
                 .font(.title2).bold()
                 .foregroundColor(.white)
                 .padding(.bottom, 5)
@@ -109,20 +123,19 @@ struct WorkoutTemplatesListView: View {
                                 .foregroundColor(.gray)
                         }
                         Spacer()
-                        Button {
-                            store.startWorkout(template: template)
-                            selectedTab = 1
-                        } label: {
-                            Image(systemName: "play.fill")
-                                .foregroundColor(.orange)
-                                .padding(8)
-                                .background(Color.gray.opacity(0.3))
-                                .clipShape(Circle())
-                        }
-                        .buttonStyle(.plain)
+                        Image(systemName: "play.fill")
+                            .foregroundColor(.orange)
+                            .padding(8)
+                            .background(Color.gray.opacity(0.3))
+                            .clipShape(Circle())
                     }
                     .padding(.vertical, 4)
                     .listRowBackground(Color.black.opacity(0.5)) // Darker row for better contrast
+                    .contentShape(Rectangle()) // Ensures the whole area is tappable
+                    .onTapGesture {
+                        store.startWorkout(template: template)
+                        selectedTab = 1
+                    }
                 }
             }
             .listStyle(.plain)
@@ -132,7 +145,8 @@ struct WorkoutTemplatesListView: View {
     }
 }
 
-
 #Preview {
-//    HomeView
+    HomeView(selectedTab: .constant(0))
+        .environmentObject(WorkoutStore())
+        .preferredColorScheme(.dark)
 }
